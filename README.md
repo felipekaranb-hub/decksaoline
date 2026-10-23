@@ -20,6 +20,8 @@ npm test           # testes do motor (inclui runs simuladas completas)
 npm run build      # build estático em dist/ (hospedável em qualquer lugar)
 ```
 
+Galeria de sprites e cenários para desenvolvimento: rode `npm run dev` e abra `/lab.html`.
+
 Atalhos no combate: `1`–`9` jogam cartas, `E` encerra o turno, `Esc` cancela.
 
 ## Estrutura

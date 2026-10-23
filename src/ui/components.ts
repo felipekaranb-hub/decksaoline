@@ -6,7 +6,7 @@ import { questDef } from '../game/quests';
 import { SKILLS, MAX_SKILL_LEVEL, EVOLUTIONS } from '../game/skills';
 import { STATUSES } from '../game/statuses';
 import type { CardInst, Drop, RunState, Statuses, StatusId, Tag } from '../game/types';
-import { CARD_ICON, gi, POTION_ICON, RELIC_ICON, SKILL_ICON, STATUS_ICON, UI_ICON } from './icons';
+import { CARD_ICON, gi, IC, POTION_ICON, RELIC_ICON, SKILL_ICON, STATUS_ICON, UI_ICON } from './icons';
 
 export const TAG_ICON: Record<Tag, string> = { espada: 'broadsword', florete: 'fencer', machado: 'battle-axe', escudo: 'round-shield', adaga: 'plain-dagger' };
 
@@ -19,7 +19,7 @@ export function hpBar(hp: number, max: number, block = 0): string {
   return `<div class="hpbar ${color}">
     <div class="hpbar-fill" style="width:${pct}%"></div>
     <span class="hpbar-text">${hp}/${max}</span>
-    ${block > 0 ? `<span class="hpbar-block">${gi(UI_ICON.block)}${block}</span>` : ''}
+    ${block > 0 ? `<span class="hpbar-block">${gi(UI_ICON.block, '', '#ffffff', 12)}${block}</span>` : ''}
   </div>`;
 }
 
@@ -28,14 +28,14 @@ export function statusIcons(st: Statuses): string {
     .filter(([, n]) => n !== 0)
     .map(([s, n]) => {
       const info = STATUSES[s];
-      return `<span class="status ${info.debuff ? 'debuff' : 'buff'}" title="${esc(info.name + ': ' + info.desc(n))}">${gi(STATUS_ICON[s])}<b>${n}</b></span>`;
+      return `<span class="status ${info.debuff ? 'debuff' : 'buff'}" title="${esc(info.name + ': ' + info.desc(n))}">${gi(STATUS_ICON[s], '', info.debuff ? IC.red : IC.green, 12)}<b>${n}</b></span>`;
     })
     .join('')}</div>`;
 }
 
 export function tagChips(tags: Tag[]): string {
   return tags
-    .map((t) => `<span class="tag" style="--tag:${TAGS[t].color}" title="${TAGS[t].name}">${gi(TAG_ICON[t])}${TAGS[t].name}</span>`)
+    .map((t) => `<span class="tag" style="--tag:${TAGS[t].color}" title="${TAGS[t].name}">${gi(TAG_ICON[t], '', '#ffffff', 12)}${TAGS[t].name}</span>`)
     .join('');
 }
 
@@ -71,8 +71,8 @@ export function cardHtml(inst: Pick<CardInst, 'id' | 'up'>, o: CardOpts = {}): s
   const style = `--tagc:${tagColor};--tagc2:${tagColor2}${o.style ? `;${o.style}` : ''}`;
   return `<div class="${cls}" style="${style}" ${o.action ? `data-action="${o.action}"` : ''} ${data}>
     ${o.prefix ?? ''}
-    <div class="card-cost">${s.cost === null ? '—' : s.cost}</div>
-    <div class="card-art">${gi(CARD_ICON[d.id] ?? 'broadsword', 'card-glyph')}<div class="card-tags">${tagChips(d.tags)}</div></div>
+    <div class="card-cost"><span>${s.cost === null ? '—' : s.cost}</span></div>
+    <div class="card-art">${gi(CARD_ICON[d.id] ?? 'broadsword', 'card-glyph', '#ffffff', 24)}<div class="card-tags">${tagChips(d.tags)}</div></div>
     <div class="card-name">${esc(cardName(inst))}</div>
     <div class="card-type">${TYPE_LABEL[d.type]}${d.rarity !== 'starter' && d.rarity !== 'curse' ? ` · ${RARITY_LABEL[d.rarity]}` : ''}</div>
     <div class="card-text">${describe(inst, o.ctx)}</div>
@@ -92,22 +92,22 @@ export function dropHtml(run: RunState, d: Drop, o: { action?: string; idx?: num
     const s = SKILLS[d.id];
     const lv = run.skills[d.id] ?? 0;
     kindLabel = lv ? `Habilidade · Lv ${lv} → ${lv + 1}` : 'Habilidade · NOVA';
-    body = `<div class="drop-icon">${gi(SKILL_ICON[d.id])}</div><div class="drop-name">${esc(s.name)}</div>
+    body = `<div class="drop-icon">${gi(SKILL_ICON[d.id], '', '#ffffff', 24)}</div><div class="drop-name">${esc(s.name)}</div>
       ${s.tag ? `<div class="card-tags">${tagChips([s.tag])}</div>` : ''}
       <div class="drop-desc">${s.desc(Math.min(MAX_SKILL_LEVEL, lv + 1))}</div>`;
   } else if (d.kind === 'relic') {
     const rel = RELICS[d.id];
     kindLabel = 'Equipamento';
-    body = `<div class="drop-icon">${gi(RELIC_ICON[d.id])}</div><div class="drop-name">${esc(rel.name)}</div><div class="drop-desc">${rel.desc}</div>`;
+    body = `<div class="drop-icon">${gi(RELIC_ICON[d.id], '', IC.gold, 24)}</div><div class="drop-name">${esc(rel.name)}</div><div class="drop-desc">${rel.desc}</div>`;
   } else {
     const p = POTIONS[d.id];
     kindLabel = 'Consumível';
-    body = `<div class="drop-icon">${gi(POTION_ICON[d.id])}</div><div class="drop-name">${esc(p.name)}</div><div class="drop-desc">${p.desc}</div>`;
+    body = `<div class="drop-icon">${gi(POTION_ICON[d.id], '', IC.purple, 24)}</div><div class="drop-name">${esc(p.name)}</div><div class="drop-desc">${p.desc}</div>`;
   }
   return `<div class="drop ${o.disabled ? 'disabled' : ''} ${o.sold ? 'sold' : ''}" style="--rar:${r.color}" ${attrs} title="${esc(dropName(d))}">
     <div class="drop-rarity">${r.name} · ${kindLabel}</div>
     ${body}
-    ${o.price !== undefined ? `<div class="price">${o.sold ? 'VENDIDO' : `${gi(UI_ICON.coin)} ${o.price}`}</div>` : ''}
+    ${o.price !== undefined ? `<div class="price">${o.sold ? 'VENDIDO' : `${gi(UI_ICON.coin, '', IC.gold, 12)} ${o.price}`}</div>` : ''}
   </div>`;
 }
 
@@ -118,7 +118,7 @@ export function classPanel(run: RunState, full = false): string {
     .map((t) => {
       const pct = Math.min(100, (counts[t] / PURE_THRESHOLD) * 100);
       return `<div class="aff" title="${TAGS[t].name}: ${counts[t]}">
-        <span style="color:${TAGS[t].color}">${gi(TAG_ICON[t])}</span>
+        <span>${gi(TAG_ICON[t], '', TAGS[t].color, 12)}</span>
         <div class="aff-bar"><div style="width:${pct}%;background:${TAGS[t].color}"></div>
         <i style="left:${(HYBRID_THRESHOLD / PURE_THRESHOLD) * 100}%"></i></div>
         <b>${counts[t]}</b></div>`;

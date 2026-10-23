@@ -11,9 +11,16 @@ import { activeQuests, MAX_ACTIVE_QUESTS, questDef } from '../game/quests';
 import { selectableCards } from '../game/run';
 import { SKILLS } from '../game/skills';
 import type { EnemyState, MetaState, NodeType, RunState } from '../game/types';
-import { enemyArt, heroArt } from './art';
+import { sceneUrl } from './pixel/scenes';
+import { spriteUrl } from './pixel/sprites';
 import { cardHtml, classPanel, dropHtml, esc, hpBar, questList, skillsList, statusIcons } from './components';
-import { EVENT_ICON, gi, giNested, NODE_ICON, POTION_ICON, RELIC_ICON, SKILL_ICON, UI_ICON } from './icons';
+import { EVENT_ICON, gi, giNested, IC, NODE_ICON, POTION_ICON, RELIC_ICON, SKILL_ICON, UI_ICON } from './icons';
+
+/** Sprite em pixel art ampliado (o tamanho final vem do CSS via --w). */
+function spriteImg(id: string, phase = 0): string {
+  const { url, size } = spriteUrl(id, phase);
+  return `<img class="sprite px" src="${url}" style="--w:${size}" width="${size * 3}" height="${size * 3}" alt="" draggable="false">`;
+}
 
 export type Overlay = null | 'deck' | 'draw' | 'discard' | 'build';
 
@@ -31,9 +38,8 @@ export interface UiState {
 // ───────────────────────── Telas fora da run ─────────────────────────
 
 export function titleView(meta: MetaState, hasRun: boolean): string {
-  const plates = Array.from({ length: 9 }, (_, i) => `<i style="--k:${i}"></i>`).join('');
-  return `<div class="screen title-screen">
-    <div class="title-sky" aria-hidden="true"><div class="aincrad">${plates}</div><div class="title-hero">${heroArt()}</div></div>
+  return `<div class="screen title-screen" style="background-image:url(${sceneUrl('title')})">
+    <div class="title-hero" aria-hidden="true">${spriteImg('hero')}</div>
     <div class="title-logo">
       <div class="title-small">SWORD ART ONLINE · FAN GAME</div>
       <h1>DECK<span>·</span>SAO<span>·</span>LINE</h1>
@@ -99,13 +105,13 @@ function hud(run: RunState): string {
   const pots = run.potions
     .map((p, i) =>
       p
-        ? `<button class="potion ${canUsePotion(run, i) ? '' : 'disabled'}" data-action="potion" data-idx="${i}" title="${esc(POTIONS[p].name + ': ' + POTIONS[p].desc)}">${gi(POTION_ICON[p])}</button>`
+        ? `<button class="potion ${canUsePotion(run, i) ? '' : 'disabled'}" data-action="potion" data-idx="${i}" title="${esc(POTIONS[p].name + ': ' + POTIONS[p].desc)}">${gi(POTION_ICON[p], '', IC.purple)}</button>`
         : `<span class="potion empty"></span>`,
     )
     .join('');
-  const relics = run.relics.map((r) => `<span class="relic" title="${esc(RELICS[r].name + ': ' + RELICS[r].desc)}">${gi(RELIC_ICON[r])}</span>`).join('');
+  const relics = run.relics.map((r) => `<span class="relic" title="${esc(RELICS[r].name + ': ' + RELICS[r].desc)}">${gi(RELIC_ICON[r], '', IC.gold)}</span>`).join('');
   const skills = Object.entries(run.skills)
-    .map(([id, lv]) => `<span class="skill-chip" title="${esc(SKILLS[id].name + ' Lv ' + lv + ': ' + SKILLS[id].desc(lv))}">${gi(SKILL_ICON[id])}<sub>${lv}</sub></span>`)
+    .map(([id, lv]) => `<span class="skill-chip" title="${esc(SKILLS[id].name + ' Lv ' + lv + ': ' + SKILLS[id].desc(lv))}">${gi(SKILL_ICON[id], '', IC.blue)}<sub>${lv}</sub></span>`)
     .join('');
   return `<header class="hud">
     <div class="hud-left">
@@ -114,8 +120,8 @@ function hud(run: RunState): string {
     </div>
     <div class="hud-hp">${hpBar(run.hp, run.maxHp)}</div>
     <div class="hud-info">
-      <span class="stat" title="Col">${gi(UI_ICON.coin)}${run.col}</span>
-      <span class="stat" title="Andar">${gi(UI_ICON.floor)}${run.floor}</span>
+      <span class="stat" title="Col">${gi(UI_ICON.coin, '', IC.gold)}${run.col}</span>
+      <span class="stat" title="Andar">${gi(UI_ICON.floor, '', IC.steel)}${run.floor}</span>
       <span class="potions">${pots}</span>
     </div>
     <div class="hud-items">${skills}${relics}</div>
@@ -195,14 +201,15 @@ function starterView(run: RunState, ui: UiState): string {
         const q = questDef(id);
         return `<div class="quest-card ${ui.starterQuest === id ? 'selected' : ''}" data-action="starter-quest" data-id="${id}">
           <b>${esc(q.title)}</b><span class="muted">${esc(q.giver)}</span>
-          <p>${esc(q.text)}</p><div class="goal">${gi('eye-target')}${esc(q.goalText)}</div>
-          <div class="goal">${gi('open-treasure-chest')}${cardDef(q.reward).name}</div></div>`;
+          <p>${esc(q.text)}</p><div class="goal">${gi('eye-target', '', IC.gold, 12)}${esc(q.goalText)}</div>
+          <div class="goal">${gi('open-treasure-chest', '', IC.gold, 12)}${cardDef(q.reward).name}</div></div>`;
       })
       .join('')}</div>
     <div class="menu"><button class="btn primary ${ui.starterCard ? '' : 'disabled'}" data-action="starter-confirm">Partir para as planícies</button></div>
   </div>`;
 }
 
+const NODE_COLOR: Record<NodeType, string> = { mob: '#f4f1e8', elite: IC.purple, event: IC.blue, town: IC.green, inn: IC.green, chest: IC.gold, boss: IC.red };
 const NODE_LABEL: Record<NodeType, string> = { mob: 'Monstros', elite: 'Elite', event: 'Evento', town: 'Cidade', inn: 'Pousada', chest: 'Baú', boss: 'Chefe do andar' };
 
 function mapView(run: RunState): string {
@@ -233,14 +240,14 @@ function mapView(run: RunState): string {
     const r = n.type === 'boss' ? 30 : 20;
     nodes.push(`<g class="${cls}" ${avail.has(n.id) ? `data-action="travel" data-id="${n.id}"` : ''} transform="translate(${p.x},${p.y})">
       <title>${NODE_LABEL[n.type]}</title>
-      <circle r="${r}"/>${giNested(NODE_ICON[n.type], n.type === 'boss' ? 34 : 22)}</g>`);
+      <rect x="${-r}" y="${-r}" width="${r * 2}" height="${r * 2}"/>${giNested(NODE_ICON[n.type], n.type === 'boss' ? 40 : 28, NODE_COLOR[n.type])}</g>`);
   }
   const f = floorDef(run.floor);
-  return `<div class="map-layout" data-floor="${run.floor}">
+  return `<div class="map-layout" data-floor="${run.floor}" style="--scene:url(${sceneUrl(String(run.floor))})">
     <aside class="map-side panel">
       <h2>${esc(f.name)}</h2>
       <p class="narrative">${esc(f.intro)}</p>
-      <div class="legend">${(Object.keys(NODE_ICON) as NodeType[]).map((t) => `<span>${gi(NODE_ICON[t])}${NODE_LABEL[t]}</span>`).join('')}</div>
+      <div class="legend">${(Object.keys(NODE_ICON) as NodeType[]).map((t) => `<span>${gi(NODE_ICON[t], '', NODE_COLOR[t])}${NODE_LABEL[t]}</span>`).join('')}</div>
       ${classPanel(run)}
       <h3>Side quests</h3>${questList(run)}
     </aside>
@@ -254,13 +261,13 @@ function intentHtml(run: RunState, e: EnemyState): string {
   if (!move) return '';
   const dmg = intentDamage(c, e);
   const icons: string[] = [];
-  if (dmg) icons.push(`<span class="intent-atk">${gi(UI_ICON.attack)}${dmg.per}${dmg.times > 1 ? `<small>×${dmg.times}</small>` : ''}</span>`);
+  if (dmg) icons.push(`<span class="intent-atk">${gi(UI_ICON.attack, '', IC.red)}${dmg.per}${dmg.times > 1 ? `<small>×${dmg.times}</small>` : ''}</span>`);
   for (const a of move.actions) {
-    if (a.k === 'block') icons.push(`<span class="intent-def">${gi(UI_ICON.block)}</span>`);
-    if (a.k === 'status') icons.push(a.to === 'player' ? `<span class="intent-debuff">${gi(UI_ICON.debuff)}</span>` : `<span class="intent-buff">${gi(UI_ICON.buff)}</span>`);
-    if (a.k === 'summon') icons.push(`<span class="intent-buff">${gi(UI_ICON.summon)}</span>`);
-    if (a.k === 'heal') icons.push(`<span class="intent-heal">${gi(UI_ICON.heal)}</span>`);
-    if (a.k === 'addCard') icons.push(`<span class="intent-debuff">${gi(UI_ICON.curse)}</span>`);
+    if (a.k === 'block') icons.push(`<span class="intent-def">${gi(UI_ICON.block, '', IC.blue)}</span>`);
+    if (a.k === 'status') icons.push(a.to === 'player' ? `<span class="intent-debuff">${gi(UI_ICON.debuff, '', IC.purple)}</span>` : `<span class="intent-buff">${gi(UI_ICON.buff, '', IC.gold)}</span>`);
+    if (a.k === 'summon') icons.push(`<span class="intent-buff">${gi(UI_ICON.summon, '', IC.gold)}</span>`);
+    if (a.k === 'heal') icons.push(`<span class="intent-heal">${gi(UI_ICON.heal, '', IC.green)}</span>`);
+    if (a.k === 'addCard') icons.push(`<span class="intent-debuff">${gi(UI_ICON.curse, '', IC.purple)}</span>`);
   }
   return `<div class="intent" title="${esc(move.name)}"><div class="intent-icons">${[...new Set(icons)].join('')}</div><small>${esc(move.name)}</small></div>`;
 }
@@ -273,7 +280,7 @@ function combatView(run: RunState, ui: UiState): string {
       const d = enemyDef(e.id);
       return `<div class="enemy k-${d.kind} ${e.dead ? 'dead' : ''} ${targeting && !e.dead ? 'targetable' : ''}" data-action="target" data-uid="${e.uid}" data-fx="${e.uid}">
         ${e.dead ? '' : intentHtml(run, e)}
-        <div class="fighter"><div class="enemy-sprite">${enemyArt(e.id, e.phase)}</div><div class="stand"></div></div>
+        <div class="fighter"><div class="enemy-sprite">${spriteImg(e.id, e.phase)}</div><div class="stand"></div></div>
         <div class="cursor-mark ${d.kind}">▼</div>
         <div class="enemy-name">${esc(d.name)}${e.phase ? ' <b class="phase">FÚRIA</b>' : ''}</div>
         ${hpBar(e.hp, e.maxHp, e.block)}
@@ -291,7 +298,7 @@ function combatView(run: RunState, ui: UiState): string {
       const style = `--rot:${(off * 2.5).toFixed(1)}deg;--lift:${(off * off * 2.2).toFixed(1)}px`;
       const kept = c.reserved.includes(card.uid);
       const pin = `<button class="reserve-btn ${kept ? 'on' : ''} ${!kept && slotsFull ? 'full' : ''}" data-action="reserve" data-idx="${i}"
-        title="${kept ? 'Tirar do Slot de Preparo' : 'Guardar no Slot de Preparo: fica na mão no próximo turno'}">${gi('back-forth')}${kept ? 'Guardada' : 'Guardar'}</button>`;
+        title="${kept ? 'Tirar do Slot de Preparo' : 'Guardar no Slot de Preparo: fica na mão no próximo turno'}">${gi('back-forth', '', '#ffffff', 12)}${kept ? 'Guardada' : 'Guardar'}</button>`;
       return cardHtml(card, {
         action: 'card', data: { idx: i }, playable, selected: ui.selected === i, ctx: previewCtx(run, card), style,
         extraClass: kept ? 'reserved' : '', prefix: pin,
@@ -303,10 +310,9 @@ function combatView(run: RunState, ui: UiState): string {
   const resultBanner =
     c.result === 'win' ? '<div class="banner win">VITÓRIA</div>' : c.result === 'lose' ? '<div class="banner lose">HP ZERADO</div>' : c.result === 'fled' ? '<div class="banner">TELEPORTE!</div>' : '';
   return `<div class="combat">
-    <div class="arena" data-floor="${run.floor}">
-      <div class="scenery" aria-hidden="true"><i class="far"></i><i class="mid"></i><i class="ground"></i></div>
+    <div class="arena" data-floor="${run.floor}" style="background-image:url(${sceneUrl(String(run.floor))})">
       <div class="player-side" data-fx="player">
-        <div class="fighter"><div class="player-avatar">${heroArt()}</div><div class="stand"></div></div>
+        <div class="fighter"><div class="player-avatar">${spriteImg('hero')}</div><div class="stand"></div></div>
         <div class="cursor-mark player">▼</div>
         <div class="enemy-name">${esc(run.name)}</div>
         ${hpBar(run.hp, run.maxHp, c.block)}
@@ -322,7 +328,7 @@ function combatView(run: RunState, ui: UiState): string {
     </div>
     <div class="hand-area">
       <div class="pile" data-action="overlay" data-overlay="draw">${gi(UI_ICON.draw)}<b>${c.draw.length}</b><small>Compra</small></div>
-      <div class="energy" title="Energia">${c.energy}<small>/${c.maxEnergy}</small></div>
+      <div class="energy" title="Energia"><span>${c.energy}<small>/${c.maxEnergy}</small></span></div>
       <div class="hand">${hand}</div>
       <div class="pile" data-action="overlay" data-overlay="discard">${gi(UI_ICON.discard)}<b>${c.discard.length}</b><small>Descarte</small></div>
       <div class="turn-box">
@@ -360,13 +366,13 @@ function rewardView(run: RunState): string {
     ? `<h3>Escolha ${r.picks > 1 ? `${r.picks} drops` : '1 drop'}</h3>
       <div class="drop-row">${r.choices.map((d, i) => dropHtml(run, d, { action: 'take-drop', idx: i, disabled: !canTakeDrop(run, d) })).join('')}</div>
       <div class="menu row">
-        <button class="btn ${run.col < r.rerollCost ? 'disabled' : ''}" data-action="reroll">${gi('back-forth')}Rerrolar · ${r.rerollCost ? `${gi(UI_ICON.coin)}${r.rerollCost}` : 'grátis'}</button>
+        <button class="btn ${run.col < r.rerollCost ? 'disabled' : ''}" data-action="reroll">${gi('back-forth')}Rerrolar · ${r.rerollCost ? `${gi(UI_ICON.coin, '', IC.gold)}${r.rerollCost}` : 'grátis'}</button>
         <button class="btn ghost" data-action="skip-drops">Pular</button>
       </div>`
     : '';
   return `<div class="screen-inner reward">
     <h2>${title}</h2>
-    <div class="col-gain">${gi(UI_ICON.coin)} +${r.col} col</div>
+    <div class="col-gain">${gi(UI_ICON.coin, '', IC.gold, 16)} +${r.col} col</div>
     ${quests}${evo}${autos}${boss}${choices}
     ${!r.choices ? `<div class="menu"><button class="btn primary" data-action="leave-reward">Continuar</button></div>` : ''}
   </div>`;
@@ -380,7 +386,7 @@ function shopView(run: RunState): string {
       .map((it, i) => dropHtml(run, it.drop, { action: 'buy', idx: i, price: it.price, sold: it.sold, disabled: it.sold || run.col < it.price || !canTakeDrop(run, it.drop) }))
       .join('')}</div>
     <div class="menu row">
-      <button class="btn ${s.removeUsed || run.col < s.removePrice ? 'disabled' : ''}" data-action="shop-remove">${gi(UI_ICON.discard)}Remover uma carta · ${gi(UI_ICON.coin)}${s.removePrice}</button>
+      <button class="btn ${s.removeUsed || run.col < s.removePrice ? 'disabled' : ''}" data-action="shop-remove">${gi(UI_ICON.discard)}Remover uma carta · ${gi(UI_ICON.coin, '', IC.gold)}${s.removePrice}</button>
     </div>
     <h3>Quadro de missões ❗ (${activeQuests(run).length}/${MAX_ACTIVE_QUESTS})</h3>
     <div class="quest-pick">${s.quests
@@ -389,7 +395,7 @@ function shopView(run: RunState): string {
         const full = activeQuests(run).length >= MAX_ACTIVE_QUESTS;
         return `<div class="quest-card ${full ? 'disabled' : ''}" data-action="shop-quest" data-id="${id}">
           <b>${esc(q.title)}</b><span class="muted">${esc(q.giver)}</span><p>${esc(q.text)}</p>
-          <div class="goal">${gi('eye-target')}${esc(q.goalText)}</div><div class="goal">${gi('open-treasure-chest')}${cardDef(q.reward).name}</div>
+          <div class="goal">${gi('eye-target', '', IC.gold, 12)}${esc(q.goalText)}</div><div class="goal">${gi('open-treasure-chest', '', IC.gold, 12)}${cardDef(q.reward).name}</div>
           <div class="accept">${full ? 'Limite de quests ativas' : 'Aceitar'}</div></div>`;
       })
       .join('') || '<p class="muted">Nenhuma missão nova aqui.</p>'}</div>
@@ -402,8 +408,8 @@ function innView(run: RunState): string {
     <h2>Pousada</h2>
     <p class="narrative">Uma cama de verdade, um prato quente e uma porta trancada. Por uma noite, Aincrad parece quase um lugar normal.</p>
     <div class="choice-row">
-      <div class="choice" data-action="rest"><div class="choice-icon">${gi('bed')}</div><b>Descansar</b><p>Recupera ${Math.round(run.maxHp * 0.3)} HP.</p></div>
-      <div class="choice" data-action="train"><div class="choice-icon">${gi('sword-brandish')}</div><b>Treinar</b><p>Melhora uma carta.</p></div>
+      <div class="choice" data-action="rest"><div class="choice-icon">${gi('bed', '', '#ffffff', 24)}</div><b>Descansar</b><p>Recupera ${Math.round(run.maxHp * 0.3)} HP.</p></div>
+      <div class="choice" data-action="train"><div class="choice-icon">${gi('sword-brandish', '', '#ffffff', 24)}</div><b>Treinar</b><p>Melhora uma carta.</p></div>
     </div>
   </div>`;
 }
@@ -420,7 +426,7 @@ function eventView(run: RunState): string {
         })
         .join('')}</div>`;
   return `<div class="screen-inner event">
-    <div class="event-icon">${gi(EVENT_ICON[d.id] ?? 'treasure-map')}</div>
+    <div class="event-icon">${gi(EVENT_ICON[d.id] ?? 'treasure-map', '', '#ffffff', 24)}</div>
     <h2>${esc(d.title)}</h2>
     <p class="narrative">${esc(d.text)}</p>
     ${choices}
@@ -432,7 +438,7 @@ function cardSelectView(run: RunState): string {
   const cards = selectableCards(run);
   return `<div class="screen-inner">
     <h2>${esc(cs.title)}</h2>
-    ${cs.price ? `<p class="muted">Custo: ${gi(UI_ICON.coin)}${cs.price}</p>` : ''}
+    ${cs.price ? `<p class="muted">Custo: ${gi(UI_ICON.coin, '', IC.gold)}${cs.price}</p>` : ''}
     <div class="card-grid">${cards.map((c) => cardHtml(cs.purpose === 'upgrade' ? { id: c.id, up: true } : c, { action: 'select-card', data: { uid: c.uid } })).join('') || '<p class="muted">Nenhuma carta disponível.</p>'}</div>
     ${cs.cancelable || !cards.length ? '<div class="menu"><button class="btn ghost" data-action="cancel-select">Cancelar</button></div>' : ''}
   </div>`;

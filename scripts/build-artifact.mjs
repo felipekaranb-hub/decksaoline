@@ -11,7 +11,7 @@ const js = assets.filter((f) => f.endsWith('.js')).map((f) => readFileSync(join(
 const html = `<title>Deck SAO Line</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
 <style>${css}</style>
 <div id="app"></div>
 <script type="module">${js.replaceAll('</script', '<\\/script')}</script>

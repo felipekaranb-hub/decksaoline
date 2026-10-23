@@ -1,18 +1,24 @@
 import type { NodeType, StatusId } from '../game/types';
-import { GAME_ICONS } from './gameIcons';
+import { pixelIconUrl } from './pixel/icons';
 
-/** Ícone do game-icons.net como SVG inline (herda a cor via currentColor). */
-export function gi(name: string, cls = ''): string {
-  const icon = GAME_ICONS[name];
-  if (!icon) return '';
-  return `<svg class="gi ${cls}" viewBox="0 0 512 512" aria-hidden="true"><path d="${icon[1]}"/></svg>`;
+/** Cores padrão dos ícones em pixel art */
+export const ICON_INK = '#f4f1e8';
+export const IC = { gold: '#ffc83a', red: '#ff5a5a', blue: '#5ab0ff', green: '#6ae07a', purple: '#c08aff', steel: '#c8d4ea' };
+
+/**
+ * Ícone do game-icons.net em pixel art (<img> com contorno escuro, legível em fundo claro ou escuro).
+ * `px` é a resolução nativa: 12 para chips pequenos, 16 para ícones comuns, 24 para destaques.
+ */
+export function gi(name: string, cls = '', fill = ICON_INK, px = 16): string {
+  const url = pixelIconUrl(name, px, fill);
+  if (!url) return '';
+  return `<img class="gi px ${cls}" src="${url}" width="${px}" height="${px}" alt="" draggable="false">`;
 }
 
-/** Mesma coisa, mas para usar dentro de outro <svg> (mapa). */
-export function giNested(name: string, size: number): string {
-  const icon = GAME_ICONS[name];
-  if (!icon) return '';
-  return `<svg class="gi" x="${-size / 2}" y="${-size / 2}" width="${size}" height="${size}" viewBox="0 0 512 512"><path d="${icon[1]}"/></svg>`;
+/** Mesma coisa, para usar dentro de um <svg> (mapa). */
+export function giNested(name: string, size: number, fill = ICON_INK): string {
+  const url = pixelIconUrl(name, 16, fill);
+  return `<image href="${url}" x="${-size / 2}" y="${-size / 2}" width="${size}" height="${size}" style="image-rendering:pixelated"/>`;
 }
 
 export const CARD_ICON: Record<string, string> = {

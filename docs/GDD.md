@@ -3,6 +3,14 @@
 Roguelite deckbuilder web ambientado na primeira temporada de Sword Art Online (Aincrad, 2022).
 Projeto de fã, sem fins comerciais. Personagens, nomes e arte originais da obra pertencem aos seus detentores.
 
+## Direção de arte
+
+Pixel art. Sprites e cenários são gerados por código (`src/ui/pixel/`) em baixa resolução, com paleta fixa,
+sombreamento em 4 tons com luz vinda do alto à esquerda, contorno escuro e ampliação sem suavização.
+As criaturas são reconhecíveis como as de Aincrad (kobolds, Taurus, treants, elfos), mas com desenho próprio.
+O céu de cada andar é o teto de pedra do andar de cima. A interface usa painéis claros do "sistema"
+(como os menus de SAO) com molduras pixeladas.
+
 ## Premissa
 
 Você é um dos 10.000 jogadores presos em Aincrad. **Não escolhe classe**: começa como Novato,

@@ -12,7 +12,14 @@ sem alterar o desenho.
 
 ## Arte
 
-Silhuetas de personagens e monstros, cenários e interface: feitas para este projeto (`src/ui/art.ts`, `src/style.css`).
+Sprites, cenários e interface em pixel art: gerados por código para este projeto
+(`src/ui/pixel/`), com desenho próprio inspirado no universo, sem reproduzir arte oficial.
+Os ícones acima são rasterizados para pixel art em tempo de execução.
+
+## Fontes
+
+[Silkscreen](https://fonts.google.com/specimen/Silkscreen) (Jason Kottke) e
+[DotGothic16](https://fonts.google.com/specimen/DotGothic16) (Fontworks), ambas sob a SIL Open Font License, via Google Fonts.
 
 ## Obra original
 
