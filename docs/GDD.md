@@ -5,11 +5,12 @@ Projeto de fã, sem fins comerciais. Personagens, nomes e arte originais da obra
 
 ## Direção de arte
 
-Pixel art. Sprites e cenários são gerados por código (`src/ui/pixel/`) em baixa resolução, com paleta fixa,
-sombreamento em 4 tons com luz vinda do alto à esquerda, contorno escuro e ampliação sem suavização.
-As criaturas são reconhecíveis como as de Aincrad (kobolds, Taurus, treants, elfos), mas com desenho próprio.
-O céu de cada andar é o teto de pedra do andar de cima. A interface usa painéis claros do "sistema"
-(como os menus de SAO) com molduras pixeladas.
+Pixel art desenhada à mão, no estilo chibi: cabeça grande, sprites pequenos (cerca de 24–56 px)
+ampliados 4×, cores chapadas com 1–2 tons de sombra, contorno escuro e paleta clara, de dia.
+Os sprites ficam em `src/ui/pixel/sprites.px` (um caractere por pixel, paleta compartilhada),
+o que facilita retocar qualquer pixel. As criaturas são reconhecíveis como as de Aincrad
+(kobolds, Taurus, treants, elfos), mas com desenho próprio. Cenários de formas grandes e suaves
+(céu em faixas, nuvens chapadas, copas em camadas, grama em manchas) com os pilares de Aincrad ao fundo.
 
 ## Premissa
 

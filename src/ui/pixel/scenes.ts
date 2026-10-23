@@ -1,19 +1,13 @@
-import { hash, toDataUrl } from './raster';
+import { hash, hexToRgb, toDataUrl } from './raster';
 
 /**
- * Cenários em pixel art (320×180), gerados por código e ampliados sem suavização.
- * Cada andar tem o "teto" de pedra do andar de cima no lugar do céu, como em Aincrad.
+ * Cenários em pixel art (320×180), no estilo de cores chapadas e formas grandes:
+ * céu em faixas, nuvens planas, copas em camadas, grama em manchas (sem ruído pixel a pixel).
+ * Ao fundo, os pilares que sustentam o andar de cima de Aincrad.
  */
 
 export const SCENE_W = 320;
 export const SCENE_H = 180;
-
-const BAYER = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-];
 
 class Buf {
   px: string[] = new Array(SCENE_W * SCENE_H).fill('#000000');
@@ -22,21 +16,12 @@ class Buf {
     y = Math.round(y);
     if (x >= 0 && y >= 0 && x < SCENE_W && y < SCENE_H) this.px[y * SCENE_W + x] = c;
   }
-  /** Gradiente vertical em faixas com dithering ordenado */
-  gradient(y0: number, y1: number, colors: string[]) {
-    const n = colors.length - 1;
-    for (let y = y0; y < y1; y++) {
-      const t = ((y - y0) / Math.max(1, y1 - y0 - 1)) * n;
-      const i = Math.min(n - 1, Math.floor(t));
-      const f = t - i;
-      for (let x = 0; x < SCENE_W; x++) this.set(x, y, f * 16 > BAYER[y % 4][x % 4] ? colors[i + 1] : colors[i]);
-    }
-  }
-  /** Preenche abaixo de uma linha de horizonte h(x) */
-  below(h: (x: number) => number, color: string | ((x: number, y: number) => string), yMax = SCENE_H) {
-    for (let x = 0; x < SCENE_W; x++) {
-      const top = Math.round(h(x));
-      for (let y = Math.max(0, top); y < yMax; y++) this.set(x, y, typeof color === 'string' ? color : color(x, y));
+  /** Faixas horizontais de cor chapada */
+  bands(y0: number, stops: [number, string][]) {
+    for (let y = y0; y < SCENE_H; y++) {
+      let c = stops[0][1];
+      for (const [sy, sc] of stops) if (y >= sy) c = sc;
+      for (let x = 0; x < SCENE_W; x++) this.set(x, y, c);
     }
   }
   rect(x: number, y: number, w: number, h: number, c: string) {
@@ -51,12 +36,17 @@ class Buf {
       }
     }
   }
+  /** Preenche abaixo de uma linha h(x) */
+  below(h: (x: number) => number, c: string, yMax = SCENE_H) {
+    for (let x = 0; x < SCENE_W; x++) for (let y = Math.max(0, Math.round(h(x))); y < yMax; y++) this.set(x, y, c);
+  }
   rgba(): Uint8ClampedArray {
     const out = new Uint8ClampedArray(SCENE_W * SCENE_H * 4);
     this.px.forEach((c, i) => {
-      out[i * 4] = parseInt(c.slice(1, 3), 16);
-      out[i * 4 + 1] = parseInt(c.slice(3, 5), 16);
-      out[i * 4 + 2] = parseInt(c.slice(5, 7), 16);
+      const [r, g, b] = hexToRgb(c);
+      out[i * 4] = r;
+      out[i * 4 + 1] = g;
+      out[i * 4 + 2] = b;
       out[i * 4 + 3] = 255;
     });
     return out;
@@ -64,184 +54,196 @@ class Buf {
 }
 
 const wave = (x: number, seed: number, amp: number, freq: number) =>
-  Math.sin(x * freq + seed) * amp + Math.sin(x * freq * 2.3 + seed * 1.7) * amp * 0.45 + Math.sin(x * freq * 5.1 + seed * 0.3) * amp * 0.15;
+  Math.sin(x * freq + seed) * amp + Math.sin(x * freq * 2.3 + seed * 1.7) * amp * 0.4;
 
-/** Teto de pedra do andar de cima, com pilares de luz e estalactites */
-function ceiling(b: Buf, stone: string[], light: string) {
-  const edge = (x: number) => 18 + wave(x, 4, 3, 0.09) + (hash(x >> 3, 1, 5) < 0.25 ? 5 * hash(x, 2, 6) : 0);
-  for (let x = 0; x < SCENE_W; x++) {
-    const e = edge(x);
-    for (let y = 0; y < e; y++) {
-      const n = hash(x >> 2, y >> 2, 21);
-      const c = y > e - 2 ? stone[0] : n < 0.2 ? stone[2] : n < 0.6 ? stone[1] : stone[0];
-      b.set(x, y, c);
-    }
-  }
-  // Juntas de pedra
-  for (let y = 4; y < 16; y += 6) for (let x = (y * 7) % 23; x < SCENE_W; x += 23) b.rect(x, y, 10, 1, stone[0]);
-  // Pilares de sustentação com luz
-  for (const px of [36, 140, 252]) {
-    b.rect(px, 0, 6, 22, stone[2]);
-    b.rect(px + 1, 0, 1, 22, light);
-  }
+interface Theme {
+  sky: [number, string][];
+  cloud: [string, string];
+  pillar: [string, string, string];
+  farHill: string;
+  hill: string;
+  hillLight: string;
+  grass: [string, string, string];
+  canopy: [string, string, string];
+  trunk: [string, string];
+  path?: [string, string];
 }
 
-function stars(b: Buf, y0: number, y1: number, color: string, density = 0.006) {
-  for (let y = y0; y < y1; y++) for (let x = 0; x < SCENE_W; x++) if (hash(x, y, 77) < density) b.set(x, y, color);
+/** Nuvem chapada: união de discos, sombra só na base */
+function cloud(b: Buf, x: number, y: number, w: number, [light, shade]: [string, string]) {
+  const n = Math.max(3, Math.round(w / 10));
+  for (let i = 0; i < n; i++) {
+    const cx = x + (i + 0.5) * (w / n);
+    const r = 5 + hash(i, x, 3) * 6;
+    b.disc(cx, y - r * 0.4, r, r * 0.8, light);
+  }
+  b.rect(x, y, w, 3, light);
+  b.rect(x + 2, y + 3, w - 4, 2, shade);
 }
 
-function grass(b: Buf, top: (x: number) => number, ramp: string[], seed: number) {
-  b.below(top, (x, y) => {
-    const d = y - top(x);
-    const n = hash(x, y, seed);
-    if (d < 1) return ramp[3];
-    if (d < 3) return n < 0.5 ? ramp[2] : ramp[3];
-    const m = hash(x >> 2, y >> 1, seed + 1);
-    return n < 0.04 ? ramp[3] : m < 0.35 ? ramp[1] : n < 0.03 ? ramp[0] : ramp[2];
-  });
-  // Tufos
-  for (let x = 0; x < SCENE_W; x += 3) {
-    if (hash(x, 3, seed) < 0.4) {
-      const t = Math.round(top(x));
-      b.set(x, t - 1, ramp[3]);
-      if (hash(x, 4, seed) < 0.4) b.set(x, t - 2, ramp[3]);
-    }
-  }
+/** Pilar de Aincrad ao fundo, sumindo no céu */
+function pillar(b: Buf, x: number, w: number, [base, light, dark]: [string, string, string]) {
+  b.rect(x, 0, w, 120, base);
+  b.rect(x, 0, 2, 120, light);
+  b.rect(x + w - 3, 0, 3, 120, dark);
+  for (let y = 10; y < 120; y += 22) b.rect(x + 2, y, w - 5, 1, dark);
 }
 
-// ───────────────────────── Andares ─────────────────────────
+/** Árvore com copa em camadas (escuro embaixo, claro em cima à esquerda) */
+function tree(b: Buf, x: number, ground: number, size: number, t: Theme) {
+  const [c0, c1, c2] = t.canopy;
+  b.rect(x - Math.round(size * 0.12), ground - size * 1.2, Math.round(size * 0.24), size * 1.2, t.trunk[0]);
+  b.rect(x - Math.round(size * 0.12), ground - size * 1.2, 2, size * 1.2, t.trunk[1]);
+  const top = ground - size * 1.45;
+  const blobs: [number, number, number][] = [
+    [-0.55, 0.15, 0.55], [0.55, 0.15, 0.55], [0, -0.2, 0.7], [-0.3, -0.55, 0.5], [0.35, -0.5, 0.5], [0, 0.3, 0.6],
+  ];
+  for (const [dx, dy, r] of blobs) b.disc(x + dx * size, top + dy * size, r * size, r * size * 0.85, c0);
+  for (const [dx, dy, r] of blobs) b.disc(x + dx * size - 2, top + dy * size - 3, r * size * 0.82, r * size * 0.7, c1);
+  for (const [dx, dy, r] of blobs.slice(2)) b.disc(x + dx * size - 4, top + dy * size - 5, r * size * 0.45, r * size * 0.35, c2);
+}
 
-function floor1(): Buf {
-  const b = new Buf();
-  b.gradient(0, 120, ['#0b1430', '#13234a', '#1e3a66', '#2e5a82', '#4a7e96', '#7aa6a0']);
-  ceiling(b, ['#0a0d18', '#151a2a', '#22283c'], '#6fa8ff');
-  // Colinas distantes
-  b.below((x) => 92 + wave(x, 1, 6, 0.03), '#2a4a5a', 122);
-  b.below((x) => 100 + wave(x, 3, 5, 0.045), '#24463a', 122);
-  // Tolbana no horizonte
-  for (const [x, w, h] of [[214, 8, 10], [224, 6, 7], [232, 4, 16], [238, 9, 9], [249, 6, 6]]) {
-    b.rect(x, 101 - h, w, h, '#1c3530');
-    if (h > 8) b.set(x + 2, 101 - h + 3, '#ffd27a');
-  }
-  b.rect(233, 81, 2, 3, '#1c3530');
-  // Árvores esparsas
-  for (let x = 6; x < SCENE_W; x += 17) {
-    if (hash(x, 1, 3) < 0.45) {
-      const y = 104 + wave(x, 3, 5, 0.045);
-      b.disc(x, y - 4, 4, 5, (px, py) => (hash(px, py, 8) < 0.3 ? '#2d5a40' : '#1d3d2c'));
-      b.rect(x, y, 1, 3, '#1a2a22');
-    }
-  }
-  grass(b, (x) => 118 + wave(x, 7, 2, 0.05), ['#16301e', '#24502a', '#3a7434', '#62a046'], 31);
-  // Caminho de terra
-  for (let y = 124; y < SCENE_H; y++) {
-    const cx = 160 + (y - 124) * 0.9;
-    const half = 6 + (y - 124) * 0.55;
-    for (let x = Math.floor(cx - half); x <= cx + half; x++) b.set(x, y, hash(x, y, 4) < 0.15 ? '#5a4a34' : '#6e5a3e');
-  }
-  // Flores
+/** Grama com manchas claras e escuras em aglomerados */
+function grass(b: Buf, top: (x: number) => number, [dark, base, light]: [string, string, string], seed: number) {
+  b.below(top, base);
   for (let i = 0; i < 70; i++) {
-    const x = Math.floor(hash(i, 1, 90) * SCENE_W);
-    const y = 126 + Math.floor(hash(i, 2, 90) * 52);
-    b.set(x, y, ['#ffe07a', '#ff9ab8', '#d8f0ff'][i % 3]);
+    const x = hash(i, 1, seed) * SCENE_W;
+    const y = top(x) + 6 + hash(i, 2, seed) * (SCENE_H - top(x) - 6);
+    const w = 6 + hash(i, 3, seed) * 18;
+    b.disc(x, y, w, w * 0.28, i % 3 === 0 ? light : dark);
   }
-  return b;
+  for (let x = 0; x < SCENE_W; x++) b.set(x, top(x), light);
+  // Tufos
+  for (let i = 0; i < 40; i++) {
+    const x = Math.round(hash(i, 4, seed) * SCENE_W);
+    const y = Math.round(top(x) + 8 + hash(i, 5, seed) * 50);
+    b.set(x, y, light);
+    b.set(x - 1, y + 1, light);
+    b.set(x + 1, y + 1, light);
+  }
 }
 
-function floor2(): Buf {
+const THEMES: Record<string, Theme> = {
+  '1': {
+    sky: [[0, '#8ccdf0'], [40, '#a4d8f2'], [70, '#bfe3f4'], [92, '#d6eef6']],
+    cloud: ['#ffffff', '#d4e8f6'],
+    pillar: ['#b4c8e6', '#d8e6f6', '#94a8cc'],
+    farHill: '#9cc8a6',
+    hill: '#7cbb64',
+    hillLight: '#94cc72',
+    grass: ['#5ea547', '#74ba52', '#92cf66'],
+    canopy: ['#4f9a44', '#6eb653', '#94cf6a'],
+    trunk: ['#7a5a3c', '#9a7650'],
+    path: ['#d8bf8a', '#c4a874'],
+  },
+  '2': {
+    sky: [[0, '#f2b98c'], [40, '#f6c99a'], [70, '#f8d8ae'], [92, '#fae6c6']],
+    cloud: ['#fff6ea', '#f2d6b8'],
+    pillar: ['#d8b8a8', '#ecd2c4', '#b8988c'],
+    farHill: '#d49a76',
+    hill: '#c88a5c',
+    hillLight: '#d8a06a',
+    grass: ['#b8944a', '#cca85a', '#dcbe72'],
+    canopy: ['#8a9a44', '#a2b456', '#bccc6a'],
+    trunk: ['#7a5a3c', '#9a7650'],
+  },
+  '3': {
+    sky: [[0, '#6aa8a4'], [40, '#82bab2'], [70, '#9cccc0'], [92, '#b6dcd0']],
+    cloud: ['#e4f4ee', '#bcdcd2'],
+    pillar: ['#9cbcc0', '#bcd6d6', '#7c9ca4'],
+    farHill: '#5e9488',
+    hill: '#4a8274',
+    hillLight: '#5a9482',
+    grass: ['#3c7a5c', '#4c8c68', '#64a47a'],
+    canopy: ['#2e6a52', '#428462', '#5ea078'],
+    trunk: ['#5a4434', '#76604a'],
+  },
+};
+
+function floorScene(key: string): Buf {
+  const t = THEMES[key] ?? THEMES['1'];
   const b = new Buf();
-  b.gradient(0, 122, ['#160e22', '#2a1636', '#4a2340', '#7a3a3c', '#b8603a', '#e0944a']);
-  ceiling(b, ['#120a10', '#1e1218', '#2c1c22'], '#ffb46a');
-  // Mesas (planaltos de topo plano)
-  const mesa = (x0: number, w: number, top: number, c: string, lit: string) => {
-    for (let x = x0; x < x0 + w; x++) {
-      const slope = Math.min(x - x0, x0 + w - x, 8);
-      const t = top + (8 - slope) * 1.6;
-      for (let y = Math.round(t); y < 124; y++) b.set(x, y, (y - top) % 7 === 0 ? lit : c);
+  b.bands(0, t.sky);
+  pillar(b, 250, 22, t.pillar);
+  pillar(b, 40, 12, t.pillar);
+  cloud(b, 70, 30, 60, t.cloud);
+  cloud(b, 170, 18, 44, t.cloud);
+  cloud(b, 280, 46, 34, t.cloud);
+  // Colinas distantes e próximas
+  b.below((x) => 96 + wave(x, 1, 6, 0.025), t.farHill, 130);
+  b.below((x) => 106 + wave(x, 3, 5, 0.035), t.hill, 130);
+  for (let x = 0; x < SCENE_W; x++) b.set(x, Math.round(106 + wave(x, 3, 5, 0.035)), t.hillLight);
+  if (key === '1') {
+    // Tolbana: muros brancos e telhados vermelhos
+    for (const [x, w, h] of [[200, 12, 7], [214, 9, 10], [226, 14, 8], [243, 8, 12], [254, 12, 7]] as const) {
+      const base = 104;
+      b.rect(x, base - h, w, h, '#f4f0e6');
+      b.rect(x - 1, base - h - 3, w + 2, 3, '#d4604c');
+      b.rect(x - 1, base - h - 1, w + 2, 1, '#a8443a');
+      b.rect(x + 2, base - h + 2, 2, 2, '#8a7a6a');
     }
-  };
-  mesa(10, 70, 70, '#3a1e22', '#4e2a2a');
-  mesa(110, 90, 56, '#2e181e', '#422426');
-  mesa(230, 60, 78, '#3a1e22', '#4e2a2a');
-  b.below((x) => 106 + wave(x, 2, 4, 0.05), '#4a2a22', 124);
-  grass(b, (x) => 120 + wave(x, 5, 2, 0.04), ['#2a1a12', '#4e3018', '#7a4e22', '#b0782e'], 41);
+    b.rect(196, 102, 76, 3, '#e4ddd0');
+  }
+  if (key === '2') {
+    // Platôs de topo plano
+    for (const [x, w, top] of [[10, 70, 70], [118, 80, 62], [236, 60, 78]] as const) {
+      for (let i = 0; i < w; i++) {
+        const slope = Math.min(i, w - i, 8);
+        const y0 = top + (8 - slope) * 1.4;
+        for (let y = Math.round(y0); y < 108; y++) b.set(x + i, y, y < y0 + 2 ? '#e4ae7e' : (y - top) % 9 < 1 ? '#b87850' : '#cc8e62');
+      }
+    }
+  }
+  if (key === '3') {
+    for (let i = 0; i < 7; i++) tree(b, 20 + i * 48 + hash(i, 1, 9) * 14, 108, 26 + hash(i, 2, 9) * 8, t);
+  }
+  // Chão
+  const groundTop = (x: number) => 122 + wave(x, 7, 2, 0.04);
+  grass(b, groundTop, t.grass, Number(key) * 17);
+  if (t.path) {
+    for (let y = 124; y < SCENE_H; y++) {
+      const cx = 170 + (y - 124) * 0.8;
+      const half = 7 + (y - 124) * 0.45;
+      for (let x = Math.floor(cx - half); x <= cx + half; x++) b.set(x, y, Math.abs(x - cx) > half - 2 ? t.path[1] : t.path[0]);
+    }
+  }
+  // Árvore grande à esquerda (moldura)
+  if (key !== '3') tree(b, 24, 128, 30, t);
+  // Flores
   for (let i = 0; i < 26; i++) {
-    const x = Math.floor(hash(i, 3, 50) * SCENE_W);
-    const y = 130 + Math.floor(hash(i, 4, 50) * 44);
-    b.disc(x, y, 3, 2, (_px, py) => (py < y ? '#8a7a6a' : '#5a4a42'));
+    const x = Math.round(hash(i, 6, 3) * SCENE_W);
+    const y = Math.round(130 + hash(i, 7, 3) * 46);
+    b.set(x, y, ['#ffffff', '#ffe27a', '#ff9ab8'][i % 3]);
   }
-  return b;
-}
-
-function floor3(): Buf {
-  const b = new Buf();
-  b.gradient(0, 124, ['#03090c', '#071418', '#0c2226', '#163a38', '#285a50', '#3e7a64']);
-  ceiling(b, ['#05080a', '#0c1214', '#141c1e'], '#7affd8');
-  // Troncos altíssimos
-  for (let i = 0; i < 9; i++) {
-    const x = Math.floor(hash(i, 1, 60) * SCENE_W);
-    const w = 8 + Math.floor(hash(i, 2, 60) * 10);
-    const shade = i % 2 ? '#0a1a18' : '#0e2420';
-    b.rect(x, 18, w, 106, shade);
-    b.rect(x + 1, 18, 1, 106, '#18322c');
-  }
-  // Copas penduradas
-  for (let x = 0; x < SCENE_W; x += 12) b.disc(x + 6, 26 + hash(x, 1, 2) * 8, 12, 9, (px, py) => (hash(px, py, 3) < 0.25 ? '#16402e' : '#0c281e'));
-  // Névoa em faixas
-  for (const yy of [70, 96, 112]) for (let y = yy; y < yy + 6; y++) for (let x = 0; x < SCENE_W; x++) {
-    if ((x + y) % 3 === 0 && hash(x >> 3, y, 13) < 0.7) b.set(x, y, '#5e9a8a');
-  }
-  grass(b, (x) => 122 + wave(x, 9, 2, 0.05), ['#06120e', '#0e241a', '#173a26', '#2a5a36'], 51);
-  // Cogumelos brilhantes
-  for (let i = 0; i < 22; i++) {
-    const x = Math.floor(hash(i, 5, 70) * SCENE_W);
-    const y = 128 + Math.floor(hash(i, 6, 70) * 48);
-    b.set(x, y, '#e8fff4');
-    b.set(x - 1, y, '#7affd8');
-    b.set(x + 1, y, '#7affd8');
-    b.set(x, y + 1, '#2a5a46');
-  }
-  // Vaga-lumes
-  for (let i = 0; i < 30; i++) b.set(hash(i, 7, 80) * SCENE_W, 40 + hash(i, 8, 80) * 80, '#c8ffa0');
   return b;
 }
 
 function title(): Buf {
   const b = new Buf();
-  b.gradient(0, 150, ['#04060e', '#080e22', '#0e1a3a', '#182a56', '#26406e']);
-  stars(b, 0, 110, '#cfe0ff', 0.008);
-  stars(b, 0, 80, '#ffe9b0', 0.002);
-  // Aincrad: andares empilhados flutuando
-  const cx = 228;
-  for (let k = 0; k < 10; k++) {
-    const y = 104 - k * 9;
-    const rx = 64 - k * 5.6;
-    b.disc(cx, y, rx, 5, (x, yy, dx, dy) => {
-      const lit = dx < -0.2 && dy < 0.3;
-      if (dy < -0.45) return lit ? '#c8d8f0' : '#8ea4c8';
-      if (dy < 0.2) return hash(x, yy, k) < 0.06 ? '#ffe08a' : lit ? '#5a7096' : '#3a4c70';
-      return '#1e2a46';
-    });
+  b.bands(0, [[0, '#7cc4ee'], [36, '#94d0f2'], [66, '#acdcf4'], [90, '#c6e8f6']]);
+  const t = THEMES['1'];
+  // Aincrad flutuando ao longe
+  const cx = 236;
+  for (let k = 0; k < 9; k++) {
+    const y = 92 - k * 8;
+    const rx = 50 - k * 5;
+    b.disc(cx, y, rx, 4.5, (_x, _y, dx, dy) => (dy < -0.3 ? '#e8f0fa' : dx < -0.4 ? '#c4d4ea' : '#a8bcdc'));
   }
-  b.disc(cx, 112, 40, 4, '#121a30');
-  // Nuvens com dithering
-  for (const [x0, y0, w] of [[150, 118, 90], [190, 74, 60], [20, 60, 70]]) {
-    for (let y = y0; y < y0 + 5; y++) for (let x = x0; x < x0 + w; x++) if ((x + y) % 2 === 0 && hash(x >> 2, y, 4) < 0.8) b.set(x, y, '#2e4470');
-  }
-  // Colina e Cidade do Início
-  b.below((x) => 146 + wave(x, 2, 4, 0.02), '#0a0f1e');
-  for (const [x, w, h] of [[20, 10, 12], [32, 6, 18], [40, 12, 9], [56, 8, 14], [66, 14, 8], [90, 7, 20]]) {
-    b.rect(x, 146 - h, w, h + 2, '#0a0f1e');
-    if (h > 10) b.set(x + 2, 146 - h + 4, '#ffd27a');
-  }
-  b.rect(92, 120, 3, 6, '#0a0f1e');
+  b.disc(cx, 98, 32, 4, '#94a8cc');
+  cloud(b, 160, 96, 110, ['#ffffff', '#d4e8f6']);
+  cloud(b, 20, 34, 70, ['#ffffff', '#d4e8f6']);
+  cloud(b, 120, 20, 40, ['#ffffff', '#d4e8f6']);
+  b.below((x) => 120 + wave(x, 2, 5, 0.02), t.farHill);
+  b.below((x) => 132 + wave(x, 5, 4, 0.03), t.hill);
+  grass(b, (x) => 146 + wave(x, 8, 2, 0.05), t.grass, 99);
+  tree(b, 296, 150, 34, t);
   return b;
 }
 
-const MAKERS: Record<string, () => Buf> = { '1': floor1, '2': floor2, '3': floor3, title };
+const MAKERS: Record<string, () => Buf> = { title, '1': () => floorScene('1'), '2': () => floorScene('2'), '3': () => floorScene('3') };
 
 /** Data URL do cenário (andar 1–3 ou "title"). */
 export function sceneUrl(key: string): string {
-  const make = MAKERS[key] ?? floor1;
-  return toDataUrl(`scene:${key}`, SCENE_W, SCENE_H, () => make().rgba());
+  const make = MAKERS[key] ?? MAKERS['1'];
+  return toDataUrl(`scene2:${key}`, SCENE_W, SCENE_H, () => make().rgba());
 }

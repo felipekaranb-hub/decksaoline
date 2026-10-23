@@ -104,11 +104,11 @@ img.px, .px { image-rendering: pixelated; image-rendering: crisp-edges; }
   background-size: cover; background-position: center bottom; image-rendering: pixelated; }
 .title-screen > * { position: relative; z-index: 1; }
 .title-hero { position: absolute !important; left: 7%; bottom: 14%; }
-.title-hero .sprite { width: calc(var(--w) * 4px); height: auto; }
+.title-hero .sprite { width: calc(var(--w) * 6px); height: auto; }
 .title-logo { text-align: left; align-self: flex-start; margin-left: 8%; }
 .title-small { font-family: var(--display); letter-spacing: 0.3em; color: var(--muted); font-size: 0.9rem; text-shadow: 2px 2px 0 #000; }
-.title-logo h1 { font-size: clamp(2.6rem, 8vw, 5.4rem); margin: 0.05em 0; letter-spacing: 0.06em; line-height: 1; color: #fff;
-  text-shadow: 4px 4px 0 #3f8cff, 8px 8px 0 #000; }
+.title-logo h1 { font-size: clamp(2.6rem, 8vw, 5.4rem); margin: 0.05em 0; letter-spacing: 0.06em; line-height: 1; color: #9ed6ff;
+  text-shadow: 3px 0 0 #2b2440, -3px 0 0 #2b2440, 0 3px 0 #2b2440, 0 -3px 0 #2b2440, 3px 3px 0 #2b2440, -3px -3px 0 #2b2440, 3px -3px 0 #2b2440, -3px 3px 0 #2b2440, 6px 6px 0 #4a7ab8; }
 .title-logo h1 span { color: var(--sao); }
 .title-sub { font-family: var(--display); color: var(--sao); letter-spacing: 0.12em; text-shadow: 2px 2px 0 #000; }
 .title-screen .menu { align-self: flex-start; margin-left: 8%; align-items: stretch; }
@@ -271,7 +271,7 @@ img.px, .px { image-rendering: pixelated; image-rendering: crisp-edges; }
 /* ───────── Mapa ───────── */
 .map-layout { position: relative; display: grid; grid-template-columns: minmax(270px, 340px) 1fr; gap: 20px; padding-block: 18px; width: 100%; isolation: isolate;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.map-layout::before { content: ''; position: fixed; inset: 0; z-index: -1; background: linear-gradient(rgba(13, 11, 23, 0.72), rgba(13, 11, 23, 0.85)), var(--scene) center / cover no-repeat;
+.map-layout::before { content: ''; position: fixed; inset: 0; z-index: -1; background: linear-gradient(rgba(13, 11, 23, 0.5), rgba(13, 11, 23, 0.7)), var(--scene) center / cover no-repeat;
   image-rendering: pixelated; }
 .map-side { align-self: start; position: sticky; top: 80px; max-height: calc(100vh - 100px); overflow: auto; }
 .map-side h2 { font-size: 1.35rem; }
@@ -321,7 +321,7 @@ img.px, .px { image-rendering: pixelated; image-rendering: crisp-edges; }
 .enemy:nth-child(2) .fighter { animation-delay: -0.4s; }
 .enemy:nth-child(3) .fighter { animation-delay: -0.8s; }
 @keyframes bob { 50% { transform: translateY(-3px); } }
-.sprite { width: calc(var(--w) * 3px); height: auto; display: block; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35)); }
+.sprite { width: calc(var(--w) * 4px); height: auto; display: block; image-rendering: pixelated; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35)); }
 .stand { width: 70%; height: 9px; margin-top: -8px; background: rgba(0, 0, 0, 0.45); }
 .player-side .stand { background: rgba(63, 140, 255, 0.35); }
 .cursor-mark { font-size: 1.1rem; line-height: 1; margin-bottom: 4px; animation: cursor 0.8s steps(2) infinite; text-shadow: 2px 2px 0 #000; }
@@ -477,7 +477,7 @@ img.px, .px { image-rendering: pixelated; image-rendering: crisp-edges; }
   .hud-buttons { order: 4; flex-wrap: wrap; }
   .hud-buttons .btn { padding: 3px 7px; font-size: 0.75rem; letter-spacing: 0; }
   .hud-buttons .btn .gi { display: none; }
-  .sprite { width: calc(var(--w) * 2px); }
+  .sprite { width: calc(var(--w) * 3px); }
   .enemy { min-width: 110px; }
   .mult-value { font-size: 2.4rem; }
   .hand { order: -1; flex: 1 0 100%; overflow-x: auto; justify-content: flex-start; padding: 34px 10px 6px; min-height: 0; }

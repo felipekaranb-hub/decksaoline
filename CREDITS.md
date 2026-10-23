@@ -12,7 +12,7 @@ sem alterar o desenho.
 
 ## Arte
 
-Sprites, cenários e interface em pixel art: gerados por código para este projeto
+Sprites desenhados à mão para este projeto (`src/ui/pixel/sprites.px`), cenários e interface
 (`src/ui/pixel/`), com desenho próprio inspirado no universo, sem reproduzir arte oficial.
 Os ícones acima são rasterizados para pixel art em tempo de execução.
 

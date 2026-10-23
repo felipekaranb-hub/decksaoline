@@ -18,8 +18,8 @@ import { EVENT_ICON, gi, giNested, IC, NODE_ICON, POTION_ICON, RELIC_ICON, SKILL
 
 /** Sprite em pixel art ampliado (o tamanho final vem do CSS via --w). */
 function spriteImg(id: string, phase = 0): string {
-  const { url, size } = spriteUrl(id, phase);
-  return `<img class="sprite px" src="${url}" style="--w:${size}" width="${size * 3}" height="${size * 3}" alt="" draggable="false">`;
+  const { url, w, h } = spriteUrl(id, phase);
+  return `<img class="sprite px" src="${url}" style="--w:${w}" width="${w * 4}" height="${h * 4}" alt="" draggable="false">`;
 }
 
 export type Overlay = null | 'deck' | 'draw' | 'discard' | 'build';
