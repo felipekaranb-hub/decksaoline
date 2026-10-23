@@ -43,7 +43,10 @@ export interface CardOpts {
   selected?: boolean;
   ctx?: DescribeCtx;
   extraClass?: string;
+  style?: string;
 }
+
+const GLYPH: Record<string, string> = { attack: '⚔️', swordskill: '✦', skill: '◈', power: '✺', curse: '☠' };
 
 export function cardHtml(inst: Pick<CardInst, 'id' | 'up'>, o: CardOpts = {}): string {
   const d = cardDef(inst.id);
@@ -60,11 +63,14 @@ export function cardHtml(inst: Pick<CardInst, 'id' | 'up'>, o: CardOpts = {}): s
     o.selected ? 'selected' : '',
     o.extraClass ?? '',
   ].join(' ');
-  return `<div class="${cls}" ${o.action ? `data-action="${o.action}"` : ''} ${data}>
+  const tagColor = d.tags[0] ? TAGS[d.tags[0]].color : 'var(--neutral-tag)';
+  const tagColor2 = d.tags[1] ? TAGS[d.tags[1]].color : tagColor;
+  const style = `--tagc:${tagColor};--tagc2:${tagColor2}${o.style ? `;${o.style}` : ''}`;
+  return `<div class="${cls}" style="${style}" ${o.action ? `data-action="${o.action}"` : ''} ${data}>
     <div class="card-cost">${s.cost === null ? '—' : s.cost}</div>
+    <div class="card-art"><span>${GLYPH[d.type]}</span><div class="card-tags">${tagChips(d.tags)}</div></div>
     <div class="card-name">${esc(cardName(inst))}</div>
     <div class="card-type">${TYPE_LABEL[d.type]}${d.rarity !== 'starter' && d.rarity !== 'curse' ? ` · ${RARITY_LABEL[d.rarity]}` : ''}</div>
-    <div class="card-tags">${tagChips(d.tags)}</div>
     <div class="card-text">${describe(inst, o.ctx)}</div>
     ${d.flavor ? `<div class="card-flavor">${esc(d.flavor)}</div>` : ''}
   </div>`;

@@ -29,7 +29,9 @@ export interface UiState {
 // ───────────────────────── Telas fora da run ─────────────────────────
 
 export function titleView(meta: MetaState, hasRun: boolean): string {
+  const plates = Array.from({ length: 7 }, (_, i) => `<i style="--k:${i}"></i>`).join('');
   return `<div class="screen title-screen">
+    <div class="aincrad" aria-hidden="true">${plates}</div>
     <div class="title-logo">
       <div class="title-small">SWORD ART ONLINE · FAN GAME</div>
       <h1>DECK<span>·</span>SAO<span>·</span>LINE</h1>
@@ -231,7 +233,7 @@ function mapView(run: RunState): string {
       <circle r="${r}"/><text y="${n.type === 'boss' ? 10 : 7}" font-size="${n.type === 'boss' ? 28 : 19}">${NODE_ICON[n.type]}</text></g>`);
   }
   const f = floorDef(run.floor);
-  return `<div class="map-layout">
+  return `<div class="map-layout" data-floor="${run.floor}">
     <aside class="map-side panel">
       <h2>${esc(f.name)}</h2>
       <p class="narrative">${esc(f.intro)}</p>
@@ -268,26 +270,32 @@ function combatView(run: RunState, ui: UiState): string {
       const d = enemyDef(e.id);
       return `<div class="enemy k-${d.kind} ${e.dead ? 'dead' : ''} ${targeting && !e.dead ? 'targetable' : ''}" data-action="target" data-uid="${e.uid}" data-fx="${e.uid}">
         ${e.dead ? '' : intentHtml(run, e)}
-        <div class="enemy-sprite">${d.sprite}</div>
+        <div class="fighter"><div class="enemy-sprite">${d.sprite}</div><div class="stand"></div></div>
+        <div class="cursor-mark ${d.kind}">▼</div>
         <div class="enemy-name">${esc(d.name)}${e.phase ? ' <b class="phase">FÚRIA</b>' : ''}</div>
         ${hpBar(e.hp, e.maxHp, e.block)}
         ${statusIcons(e.st)}
       </div>`;
     })
     .join('');
+  const mid = (c.hand.length - 1) / 2;
   const hand = c.hand
     .map((card, i) => {
       const playable = canPlay(run, i) && !ui.busy;
-      return cardHtml(card, { action: 'card', data: { idx: i }, playable, selected: ui.selected === i, ctx: previewCtx(run, card) });
+      const off = i - mid;
+      const style = `--rot:${(off * 2.5).toFixed(1)}deg;--lift:${(off * off * 2.2).toFixed(1)}px`;
+      return cardHtml(card, { action: 'card', data: { idx: i }, playable, selected: ui.selected === i, ctx: previewCtx(run, card), style });
     })
     .join('');
   const tagsPlayed = c.playedTags.map((ts) => (ts.length ? ts.map((t) => `<i class="pt pt-${t}"></i>`).join('') : '<i class="pt pt-none"></i>')).join('');
   const resultBanner =
     c.result === 'win' ? '<div class="banner win">VITÓRIA</div>' : c.result === 'lose' ? '<div class="banner lose">HP ZERADO</div>' : c.result === 'fled' ? '<div class="banner">TELEPORTE!</div>' : '';
   return `<div class="combat">
-    <div class="arena">
+    <div class="arena" data-floor="${run.floor}">
+      <div class="scenery" aria-hidden="true"><i class="far"></i><i class="mid"></i><i class="ground"></i></div>
       <div class="player-side" data-fx="player">
-        <div class="player-avatar">🧍</div>
+        <div class="fighter"><div class="player-avatar">🧍</div><div class="stand"></div></div>
+        <div class="cursor-mark player">▼</div>
         <div class="enemy-name">${esc(run.name)}</div>
         ${hpBar(run.hp, run.maxHp, c.block)}
         ${statusIcons(c.st)}

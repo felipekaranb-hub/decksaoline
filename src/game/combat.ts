@@ -266,6 +266,7 @@ function damageEnemy(run: RunState, c: CombatState, e: EnemyState, amount: numbe
   if (e.hp <= 0) {
     e.dead = true;
     e.block = 0;
+    c.fx.push({ target: e.uid, text: '', kind: 'death' });
     run.stats.kills++;
     log(c, `${enemyDef(e.id).name} se desfez em polígonos.`);
     signal(run, { k: 'kill', enemy: e.id });
@@ -346,6 +347,14 @@ export function playCard(run: RunState, handIdx: number, targetUid?: number): bo
   const isAttack = def.type === 'attack' || def.type === 'swordskill';
   let bonus = isAttack && !c.firstAttackUsed && has(run, 'pedra_afiar') ? 8 : 0;
   let dealtDamage = false;
+
+  if (def.type === 'swordskill') {
+    // Rastro de luz da Sword Skill (cor da tag na UI)
+    const hitsAll = s.effects.some((e) => e.k === 'dmg' && e.all);
+    for (const t of hitsAll ? aliveEnemies(c) : [target].filter(Boolean)) {
+      c.fx.push({ target: t.uid, text: def.tags[0] ?? 'none', kind: 'slash' });
+    }
+  }
 
   // 2) Efeitos da carta, em ordem
   for (const eff of s.effects) {

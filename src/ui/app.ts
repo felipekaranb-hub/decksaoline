@@ -17,6 +17,8 @@ export class App {
   private root: HTMLElement;
   private meta: MetaState = loadMeta();
   private run: RunState | null = loadRun();
+  private lastMult = 1;
+  private lastScreen = '';
   private ui: UiState = {
     view: 'title',
     selected: null,
@@ -46,6 +48,11 @@ export class App {
     else if (this.run) html = runView(this.run, ui);
     this.root.innerHTML = html;
     if (ui.view === 'create') (this.root.querySelector('#player-name') as HTMLInputElement | null)?.focus();
+    const screenKey = `${ui.view}:${this.run?.screen ?? ''}`;
+    if (screenKey !== this.lastScreen) {
+      this.lastScreen = screenKey;
+      window.scrollTo(0, 0);
+    }
     if (this.run?.screen === 'map' && ui.view === 'run' && !ui.overlay) {
       // O mapa sobe de baixo para cima: centraliza nas salas disponíveis
       this.root.querySelector('.node.available')?.scrollIntoView({ block: 'center' });
@@ -56,12 +63,27 @@ export class App {
   /** Mostra números flutuantes (dano, bloqueio, combos) gerados pelo motor. */
   private flushFx() {
     const c = this.run?.combat;
+    // Pulso no painel de Mult quando o valor muda
+    if (c && c.mult !== this.lastMult) {
+      if (c.mult > this.lastMult) this.root.querySelector('.mult-value')?.classList.add('bump');
+      this.lastMult = c.mult;
+    }
     if (!c || !c.fx.length) return;
     const perTarget = new Map<string, number>();
     for (const fx of c.fx) {
       const key = String(fx.target);
       const el = this.root.querySelector(`[data-fx="${key}"]`) as HTMLElement | null;
       if (!el) continue;
+      if (fx.kind === 'death') {
+        this.shatter(el);
+        continue;
+      }
+      if (fx.kind === 'slash') {
+        const sl = document.createElement('div');
+        sl.className = `slash slash-${fx.text}`;
+        el.appendChild(sl);
+        continue;
+      }
       const n = perTarget.get(key) ?? 0;
       perTarget.set(key, n + 1);
       const f = document.createElement('div');
@@ -77,6 +99,28 @@ export class App {
       }
     }
     c.fx = [];
+  }
+
+  /** Inimigo se desfaz em polígonos de luz, como em SAO. */
+  private shatter(el: HTMLElement) {
+    // Fica fora do #app para sobreviver aos re-renders durante a animação
+    const r = (el.querySelector('.enemy-sprite') ?? el).getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('i');
+      p.className = 'shard';
+      const ang = (i / 18) * Math.PI * 2 + Math.random() * 0.4;
+      const dist = 60 + Math.random() * 90;
+      p.style.left = `${cx}px`;
+      p.style.top = `${cy}px`;
+      p.style.setProperty('--dx', `${Math.cos(ang) * dist}px`);
+      p.style.setProperty('--dy', `${Math.sin(ang) * dist - 40}px`);
+      p.style.setProperty('--rot', `${Math.random() * 540 - 270}deg`);
+      p.style.animationDelay = `${Math.random() * 120}ms`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 1400);
+    }
   }
 
   private save() {

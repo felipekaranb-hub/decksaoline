@@ -130,7 +130,7 @@ export interface EnemyState {
 export interface Fx {
   target: 'player' | 'mult' | number;
   text: string;
-  kind: 'dmg' | 'block' | 'heal' | 'status' | 'combo' | 'loot';
+  kind: 'dmg' | 'block' | 'heal' | 'status' | 'combo' | 'loot' | 'death' | 'slash';
 }
 
 /** Loot que cai durante o combate (entregue na vitória). */
