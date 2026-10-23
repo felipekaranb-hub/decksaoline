@@ -8,6 +8,7 @@ import { loadMeta, loadRun, recordRunEnd, saveMeta, saveRun } from '../game/meta
 import { newSeed } from '../game/rng';
 import * as R from '../game/run';
 import type { MetaState, RunState } from '../game/types';
+import { SVG_DEFS } from './art';
 import { createView, monumentView, runView, titleView, type UiState } from './views';
 
 const ENEMY_STEP_MS = 420;
@@ -32,6 +33,7 @@ export class App {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    document.body.insertAdjacentHTML('afterbegin', SVG_DEFS);
     root.addEventListener('click', (e) => this.onClick(e));
     document.addEventListener('keydown', (e) => this.onKey(e));
     this.render();

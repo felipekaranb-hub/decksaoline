@@ -30,4 +30,6 @@ src/ui/     renderização e controle (TypeScript + DOM, sem framework)
 tests/      testes Vitest do motor
 ```
 
+Ícones de game-icons.net (CC BY 3.0) — veja [`CREDITS.md`](CREDITS.md).
+
 Projeto de fã, sem fins comerciais. Sword Art Online pertence a Reki Kawahara / Kadokawa / Aniplex.
