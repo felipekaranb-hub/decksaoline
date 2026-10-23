@@ -553,3 +553,23 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ───────── Slot de Preparo ───────── */
+.reserve-btn { position: absolute; top: 7px; left: 28px; z-index: 3; display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--display); font-weight: 700; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #fff; background: rgba(5, 8, 15, 0.6); border: 1px solid rgba(255, 255, 255, 0.45); border-radius: 999px; padding: 2px 8px 2px 5px;
+  cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s; }
+.reserve-btn .gi { width: 12px; height: 12px; }
+.card:hover .reserve-btn, .reserve-btn.on, .reserve-btn:focus-visible { opacity: 1; }
+.reserve-btn:hover { background: var(--sys); border-color: #fff; }
+.reserve-btn.on { background: var(--sys); border-color: #fff; box-shadow: 0 0 10px rgba(47, 151, 255, 0.8); }
+.reserve-btn.full { cursor: not-allowed; }
+.reserve-btn.full:hover { background: rgba(5, 8, 15, 0.6); }
+.card.reserved { border-color: #9fd3ff; box-shadow: 0 0 0 2px var(--sys), 0 0 22px rgba(47, 151, 255, 0.6), 0 8px 20px rgba(0, 0, 0, 0.45); }
+.turn-box { display: flex; flex-direction: column; align-items: center; gap: 8px; align-self: center; }
+.reserve-slots { display: flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 700; font-size: 0.8rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.reserve-slots .pips { display: flex; gap: 4px; }
+.reserve-slots i { width: 14px; height: 14px; border-radius: 4px; border: 2px solid #5d7fae; transform: rotate(45deg); }
+.reserve-slots i.on { background: var(--sys); border-color: #cfe7ff; box-shadow: 0 0 8px var(--sys); }
+@media (hover: none) { .reserve-btn { opacity: 0.85; } }

@@ -1,6 +1,6 @@
 import { cardDef, fmtMult, needsTarget } from '../game/cards';
 import { computeClass } from '../game/classes';
-import { aliveEnemies, canPlay, canUsePotion, currentMove, intentDamage, previewCtx } from '../game/combat';
+import { aliveEnemies, canPlay, canUsePotion, currentMove, intentDamage, previewCtx, reserveSlots } from '../game/combat';
 import { canTakeDrop } from '../game/drops';
 import { enemyDef } from '../game/enemies';
 import { eventDef } from '../game/events';
@@ -143,6 +143,7 @@ function overlayView(run: RunState, ui: UiState): string {
         <li><b>Trinca</b> (+1): 3ª carta da mesma tag no turno. <b>Full Combo</b> (×1,5): 5ª.</li>
         <li><b>Arsenal</b> (+1): 3 tags diferentes no turno. <b>Arsenal Completo</b> (×2): todas as 5.</li>
         <li><b>Skill Chain</b> (×1,5): Sword Skill logo após outra Sword Skill. Cuidado com o Atraso!</li>
+        <li><b>Slot de Preparo</b>: no fim do turno a mão é descartada, mas as cartas marcadas com <b>Guardar</b> continuam com você (1 slot; mais com Quick Change e Bainha Dupla). Use para segurar a peça que fecha o combo do próximo turno.</li>
       </ul>`;
   } else {
     const c = run.combat;
@@ -281,14 +282,23 @@ function combatView(run: RunState, ui: UiState): string {
     })
     .join('');
   const mid = (c.hand.length - 1) / 2;
+  const slots = reserveSlots(run);
+  const slotsFull = c.reserved.length >= slots;
   const hand = c.hand
     .map((card, i) => {
       const playable = canPlay(run, i) && !ui.busy;
       const off = i - mid;
       const style = `--rot:${(off * 2.5).toFixed(1)}deg;--lift:${(off * off * 2.2).toFixed(1)}px`;
-      return cardHtml(card, { action: 'card', data: { idx: i }, playable, selected: ui.selected === i, ctx: previewCtx(run, card), style });
+      const kept = c.reserved.includes(card.uid);
+      const pin = `<button class="reserve-btn ${kept ? 'on' : ''} ${!kept && slotsFull ? 'full' : ''}" data-action="reserve" data-idx="${i}"
+        title="${kept ? 'Tirar do Slot de Preparo' : 'Guardar no Slot de Preparo: fica na mão no próximo turno'}">${gi('back-forth')}${kept ? 'Guardada' : 'Guardar'}</button>`;
+      return cardHtml(card, {
+        action: 'card', data: { idx: i }, playable, selected: ui.selected === i, ctx: previewCtx(run, card), style,
+        extraClass: kept ? 'reserved' : '', prefix: pin,
+      });
     })
     .join('');
+  const slotPips = Array.from({ length: slots }, (_, i) => `<i class="${i < c.reserved.length ? 'on' : ''}"></i>`).join('');
   const tagsPlayed = c.playedTags.map((ts) => (ts.length ? ts.map((t) => `<i class="pt pt-${t}"></i>`).join('') : '<i class="pt pt-none"></i>')).join('');
   const resultBanner =
     c.result === 'win' ? '<div class="banner win">VITÓRIA</div>' : c.result === 'lose' ? '<div class="banner lose">HP ZERADO</div>' : c.result === 'fled' ? '<div class="banner">TELEPORTE!</div>' : '';
@@ -315,7 +325,12 @@ function combatView(run: RunState, ui: UiState): string {
       <div class="energy" title="Energia">${c.energy}<small>/${c.maxEnergy}</small></div>
       <div class="hand">${hand}</div>
       <div class="pile" data-action="overlay" data-overlay="discard">${gi(UI_ICON.discard)}<b>${c.discard.length}</b><small>Descarte</small></div>
-      <button class="btn primary end-turn ${ui.busy || c.result ? 'disabled' : ''}" data-action="end-turn">Fim do turno</button>
+      <div class="turn-box">
+        <div class="reserve-slots" title="Slot de Preparo: cartas guardadas continuam na mão no próximo turno">
+          <span>Preparo</span><span class="pips">${slotPips}</span>
+        </div>
+        <button class="btn primary end-turn ${ui.busy || c.result ? 'disabled' : ''}" data-action="end-turn">Fim do turno</button>
+      </div>
     </div>
     ${ui.selected !== null ? '<div class="hint">Escolha um alvo (ou clique na carta de novo para cancelar)</div>' : ''}
     <button class="log-toggle btn small ghost" data-action="toggle-log">Log</button>

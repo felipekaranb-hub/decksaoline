@@ -54,7 +54,7 @@ export const NODE_ICON: Record<NodeType, string> = {
 export const RELIC_ICON: Record<string, string> = {
   escudo_redondo: 'round-shield', cota_malha: 'chain-mail', pedra_afiar: 'sword-in-stone', bolsa_mercador: 'two-coins',
   anel_forca: 'ring', amuleto_sorte: 'clover', sobretudo_negro: 'cloak', cristal_ressonancia: 'crystal-wand',
-  talwar_kobold: 'two-handed-sword', coroa_taurus: 'sharp-crown', cristal_vida: 'heart-bottle',
+  talwar_kobold: 'two-handed-sword', bainha_dupla: 'crossed-swords', coroa_taurus: 'sharp-crown', cristal_vida: 'heart-bottle',
 };
 
 export const POTION_ICON: Record<string, string> = {
@@ -65,7 +65,7 @@ export const POTION_ICON: Record<string, string> = {
 export const SKILL_ICON: Record<string, string> = {
   mestria_espada: 'broadsword', mestria_florete: 'fencer', mestria_machado: 'battle-axe', mestria_escudo: 'round-shield',
   mestria_adaga: 'plain-dagger', harmonia: 'swirl-string', polivalente: 'sword-clash', foco: 'eye-target',
-  skill_connect: 'lightning-trio', battle_healing: 'heart-plus', deteccao: 'radar-sweep', fortuna: 'clover', vigor: 'shining-heart',
+  skill_connect: 'lightning-trio', quick_change: 'back-forth', battle_healing: 'heart-plus', deteccao: 'radar-sweep', fortuna: 'clover', vigor: 'shining-heart',
 };
 
 export const UI_ICON = {

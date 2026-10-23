@@ -46,6 +46,9 @@ A versão atual tem 3 andares (Illfang, Asterius, Nerius).
 | Arsenal Completo | as 5 tags no turno | ×2 |
 | Skill Chain | Sword Skill logo após outra Sword Skill | ×1,5 |
 
+- **Slot de Preparo**: no fim do turno a mão é descartada, exceto as cartas marcadas com *Guardar*.
+  Começa com 1 slot; Quick Change (+1 a cada 2 níveis) e Bainha Dupla (+1) aumentam. Serve para segurar
+  a peça que fecha o combo do turno seguinte, com o custo de não jogá-la agora.
 - **Sword Skills** são fortes, mas causam **Atraso** (pós-movimento): menos Energia no próximo turno.
   Skill Connect, Pós-movimento Curto e Skill Chain mitigam isso.
 

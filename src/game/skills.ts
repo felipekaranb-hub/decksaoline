@@ -45,6 +45,8 @@ export const SKILLS: Record<string, SkillDef> = Object.fromEntries(
       desc: (lv) => `Compra +${lv} carta(s) no primeiro turno de cada combate.` }),
     S({ id: 'fortuna', name: 'Fortuna', icon: '🍀', rarity: 'uncommon',
       desc: (lv) => `+${10 * lv}% de col e drops de raridade maior.` }),
+    S({ id: 'quick_change', name: 'Quick Change', icon: '🔄', rarity: 'uncommon',
+      desc: (lv) => `+${Math.ceil(lv / 2)} slot(s) de Preparo (guarda cartas na mão entre turnos).` }),
     S({ id: 'vigor', name: 'Vigor', icon: '❤️', rarity: 'common',
       desc: (lv) => `+${6 * lv} de HP máximo.` }),
   ].map((s) => [s.id, s]),

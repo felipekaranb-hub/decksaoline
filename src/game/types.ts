@@ -160,6 +160,8 @@ export interface CombatState {
   attacksThisTurn: number;
   ssThisTurn: number;
   blockGainedThisTurn: number;
+  /** Cartas marcadas no Slot de Preparo: ficam na mão no fim do turno */
+  reserved: number[];
   firstAttackUsed: boolean;
   tookDamage: boolean;
   /** Classe emergente calculada no início do combate */

@@ -1,6 +1,6 @@
 import { needsTarget } from '../game/cards';
 import { computeClass } from '../game/classes';
-import { aliveEnemies, canPlay, enemyTakeTurn, endPlayerTurn, playCard, startNextRound, usePotion } from '../game/combat';
+import { aliveEnemies, canPlay, enemyTakeTurn, endPlayerTurn, playCard, startNextRound, toggleReserve, usePotion } from '../game/combat';
 import { enemyDef } from '../game/enemies';
 import { eventDef } from '../game/events';
 import { POTIONS } from '../game/items';
@@ -255,6 +255,9 @@ export class App {
       // ── Combate ──
       case 'card':
         return this.onCard(Number(d.idx));
+      case 'reserve':
+        if (!ui.busy && toggleReserve(run, Number(d.idx))) return this.commit();
+        return this.shake(Number(d.idx));
       case 'target':
         return this.onTarget(Number(d.uid));
       case 'end-turn':

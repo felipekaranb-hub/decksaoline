@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { computeClass } from '../src/game/classes';
-import { canPlay, endTurn, playCard, startCombat } from '../src/game/combat';
+import { canPlay, endTurn, playCard, reserveSlots, startCombat, toggleReserve } from '../src/game/combat';
 import { canTakeDrop } from '../src/game/drops';
 import { generateMap, reachable, BOSS_ID } from '../src/game/map';
 import { questSignal } from '../src/game/quests';
@@ -110,6 +110,43 @@ describe('combos estilo Balatro', () => {
     playCard(run, 0);
     playCard(run, 0, c.enemies[0].uid);
     expect(c.block - before).toBe(14); // 7 × 2
+  });
+});
+
+describe('Slot de Preparo', () => {
+  it('carta guardada continua na mão no turno seguinte', () => {
+    const run = freshRun();
+    startCombat(run, ['javali'], 'normal');
+    const c = run.combat!;
+    const kept = c.hand[2];
+    expect(toggleReserve(run, 2)).toBe(true);
+    endTurn(run);
+    expect(c.hand.some((x) => x.uid === kept.uid)).toBe(true);
+    expect(c.discard.some((x) => x.uid === kept.uid)).toBe(false);
+    expect(c.reserved).toEqual([]);
+  });
+
+  it('respeita o limite de slots e cresce com Quick Change e Bainha Dupla', () => {
+    const run = freshRun();
+    startCombat(run, ['javali'], 'normal');
+    expect(reserveSlots(run)).toBe(1);
+    expect(toggleReserve(run, 0)).toBe(true);
+    expect(toggleReserve(run, 1)).toBe(false);
+    run.skills.quick_change = 1;
+    run.relics.push('bainha_dupla');
+    expect(reserveSlots(run)).toBe(3);
+    expect(toggleReserve(run, 1)).toBe(true);
+  });
+
+  it('jogar a carta tira ela do slot', () => {
+    const run = freshRun();
+    startCombat(run, ['javali'], 'normal');
+    const c = run.combat!;
+    c.energy = 10;
+    const idx = c.hand.findIndex((_, i) => canPlay(run, i));
+    toggleReserve(run, idx);
+    playCard(run, idx, c.enemies[0].uid);
+    expect(c.reserved).toEqual([]);
   });
 });
 

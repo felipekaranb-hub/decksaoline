@@ -17,6 +17,7 @@ export const RELICS: Record<string, RelicDef> = Object.fromEntries(
     R({ id: 'bolsa_mercador', name: 'Bolsa do Mercador', icon: '👛', rarity: 'common', desc: 'Ganha 30% a mais de col nos combates.' }),
     R({ id: 'anel_forca', name: 'Anel de Força', icon: '💍', rarity: 'uncommon', desc: 'Começa cada combate com 1 de Força.' }),
     R({ id: 'amuleto_sorte', name: 'Amuleto da Sorte', icon: '🧿', rarity: 'uncommon', desc: 'Telas de drop oferecem 4 opções e o primeiro reroll é grátis.' }),
+    R({ id: 'bainha_dupla', name: 'Bainha Dupla', icon: '⚔️', rarity: 'uncommon', desc: '+1 slot de Preparo: guarda mais uma carta na mão entre turnos.' }),
     R({ id: 'sobretudo_negro', name: 'Sobretudo Negro', icon: '🧥', rarity: 'rare', desc: 'Começa cada combate com 1 de Destreza.' }),
     R({ id: 'cristal_ressonancia', name: 'Cristal de Ressonância', icon: '🔮', rarity: 'rare', desc: 'Começa cada turno com +0,5 Mult.' }),
 

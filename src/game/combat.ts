@@ -336,6 +336,7 @@ export function playCard(run: RunState, handIdx: number, targetUid?: number): bo
 
   c.energy -= s.cost!;
   c.hand.splice(handIdx, 1);
+  c.reserved = c.reserved.filter((uid) => uid !== card.uid);
   log(c, `Você usou ${cardName(card)}.`);
 
   // 1) Padrões de combo do turno
@@ -498,6 +499,7 @@ export function startCombat(run: RunState, enemyIds: string[], kind: EnemyKind) 
     attacksThisTurn: 0,
     ssThisTurn: 0,
     blockGainedThisTurn: 0,
+    reserved: [],
     firstAttackUsed: false,
     tookDamage: false,
     classId: cls.id,
@@ -582,9 +584,32 @@ export function endPlayerTurn(run: RunState) {
     c.result = 'lose';
     return;
   }
-  c.discard.push(...c.hand);
-  c.hand = [];
+  // Slot de Preparo: cartas marcadas continuam na mão para o próximo turno
+  const keep = new Set(c.reserved);
+  c.discard.push(...c.hand.filter((card) => !keep.has(card.uid)));
+  c.hand = c.hand.filter((card) => keep.has(card.uid));
+  c.reserved = [];
   decay(c.st);
+}
+
+/** Quantas cartas podem ser guardadas por turno no Slot de Preparo. */
+export function reserveSlots(run: RunState): number {
+  const qc = skillLv(run, 'quick_change');
+  return 1 + Math.ceil(qc / 2) + (has(run, 'bainha_dupla') ? 1 : 0);
+}
+
+/** Marca/desmarca uma carta da mão para ficar no Slot de Preparo. */
+export function toggleReserve(run: RunState, handIdx: number): boolean {
+  const c = run.combat;
+  const card = c?.hand[handIdx];
+  if (!c || !card || c.result) return false;
+  if (c.reserved.includes(card.uid)) {
+    c.reserved = c.reserved.filter((uid) => uid !== card.uid);
+    return true;
+  }
+  if (c.reserved.length >= reserveSlots(run)) return false;
+  c.reserved.push(card.uid);
+  return true;
 }
 
 function decay(st: Statuses) {

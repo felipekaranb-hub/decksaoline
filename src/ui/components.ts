@@ -47,6 +47,8 @@ export interface CardOpts {
   ctx?: DescribeCtx;
   extraClass?: string;
   style?: string;
+  /** HTML extra no topo da carta (ex.: botão de guardar) */
+  prefix?: string;
 }
 
 export function cardHtml(inst: Pick<CardInst, 'id' | 'up'>, o: CardOpts = {}): string {
@@ -68,6 +70,7 @@ export function cardHtml(inst: Pick<CardInst, 'id' | 'up'>, o: CardOpts = {}): s
   const tagColor2 = d.tags[1] ? TAGS[d.tags[1]].color : tagColor;
   const style = `--tagc:${tagColor};--tagc2:${tagColor2}${o.style ? `;${o.style}` : ''}`;
   return `<div class="${cls}" style="${style}" ${o.action ? `data-action="${o.action}"` : ''} ${data}>
+    ${o.prefix ?? ''}
     <div class="card-cost">${s.cost === null ? '—' : s.cost}</div>
     <div class="card-art">${gi(CARD_ICON[d.id] ?? 'broadsword', 'card-glyph')}<div class="card-tags">${tagChips(d.tags)}</div></div>
     <div class="card-name">${esc(cardName(inst))}</div>

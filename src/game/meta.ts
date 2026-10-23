@@ -38,7 +38,10 @@ export function loadRun(): RunState | null {
     const raw = storage()?.getItem(RUN_KEY);
     if (!raw) return null;
     const run = JSON.parse(raw) as RunState;
-    return run.version === RUN_VERSION ? run : null;
+    if (run.version !== RUN_VERSION) return null;
+    // Saves anteriores ao Slot de Preparo
+    if (run.combat && !run.combat.reserved) run.combat.reserved = [];
+    return run;
   } catch {
     return null;
   }
